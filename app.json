@@ -1,17 +1,17 @@
 {
   "expo": {
-    "name": "DosageCal",
+    "name": "LAST Calculator",
     "slug": "DosageCal",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/adaptive-icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
+  "image": "./assets/adaptive-icon.png",
+  "resizeMode": "contain",
+  "backgroundColor": "#ffffff"
+},
     "ios": {
       "supportsTablet": true
     },
@@ -20,10 +20,16 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.rca.dosagecal"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "099e8658-0f17-4f77-9c9e-383a1f300db2"
+      }
     }
   }
 }
