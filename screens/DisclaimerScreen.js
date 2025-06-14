@@ -13,10 +13,10 @@ import { Colors } from "../theme";
 export default function DisclaimerScreen({ navigation }) {
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Image
-        style={styles.logo}
-        source={require("../assets/adaptive-icon.png")}
-      />
+      <View style={styles.imgcontainer}>
+        <Image style={styles.logo} source={require("../assets/logotext.png")} />
+      </View>
+
       <Text style={styles.title}>Disclaimer</Text>
       <Text style={styles.text}>
         This app is a tool to assist with the calculation of local anaesthetic
@@ -64,5 +64,20 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
     fontSize: 16,
+  },
+  logo: {
+    width: 180,
+    height: 180,
+    resizeMode: "contain",
+  },
+  imgcontainer: {
+    width: 200,
+    height: 200,
+    borderRadius: 100, // Half of width/height
+    backgroundColor: "#f1f1f1",
+    alignItems: "center",
+    justifyContent: "center", // Center vertically
+    marginBottom: 20,
+    overflow: "hidden", // Ensures content stays within the circle
   },
 });

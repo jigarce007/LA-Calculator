@@ -1,32 +1,32 @@
 export const LA_DRUGS = [
   {
     name: "Lidocaine",
-    toxicDose: 3, // mg/kg
-    concentrations: [10, 20], // mg/ml
+    toxicDose: 3,
+    concentrations: [10, 20],
   },
   {
-    name: "Bupivacaine",
+    name: "Lidocaine + Adrenaline",
+    toxicDose: 7,
+    concentrations: [10, 15, 20],
+  },
+  {
+    name: "Topical Lidocaine",
+    toxicDose: 9,
+    concentrations: [10, 20, 40, 100],
+  },
+  {
+    name: "(Levo)Bupivacaine", // merged
     toxicDose: 2,
-    concentrations: [2.5, 5],
+    concentrations: [2.5, 3.75, 5, 7.5],
   },
   {
     name: "Ropivacaine",
     toxicDose: 3,
-    concentrations: [7.5, 10],
+    concentrations: [3.75, 5, 7.5],
   },
   {
     name: "Prilocaine",
     toxicDose: 6,
-    concentrations: [10, 20],
-  },
-  {
-    name: "Levobupivacaine",
-    toxicDose: 2,
-    concentrations: [2.5, 5],
-  },
-  {
-    name: "Mepivacaine",
-    toxicDose: 4,
     concentrations: [10, 20],
   },
 ];

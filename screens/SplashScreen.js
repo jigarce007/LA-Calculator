@@ -11,10 +11,6 @@ export default function SplashScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Image
-        style={styles.logoic}
-        source={require("../assets/adaptive-icon.png")}
-      />
       <Image style={styles.logo} source={require("../assets/logo.png")} />
     </View>
   );

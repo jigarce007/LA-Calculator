@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { LA_DRUGS } from "../data/toxicData";
 import { Colors } from "../theme";
 
-export function RemainingVolumeScreen({ route }) {
+export function RemainingVolumeScreen({ route, navigation }) {
   const { dosingWeight, entries } = route.params;
 
   const [selectedLA, setSelectedLA] = useState(LA_DRUGS[0].name);
@@ -68,6 +68,28 @@ export function RemainingVolumeScreen({ route }) {
           Remaining Volume: {remainingVolume} ml
         </Text>
       </View>
+      <TouchableOpacity
+        style={styles.startAgainButton}
+        onPress={() =>
+          Alert.alert(
+            "Start Again",
+            "Are you sure you want to reset everything?",
+            [
+              { text: "Cancel", style: "cancel" },
+              {
+                text: "Yes",
+                onPress: () =>
+                  navigation.reset({
+                    index: 0,
+                    routes: [{ name: "IBW" }],
+                  }),
+              },
+            ]
+          )
+        }
+      >
+        <Text style={styles.startAgainButtonText}>Start Again</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -99,8 +121,11 @@ const styles = StyleSheet.create({
   resultBox: {
     marginTop: 20,
     padding: 15,
-    backgroundColor: "#65d7e6",
+    borderCurve: 10,
+    backgroundColor: Colors.lightPink,
     borderRadius: 10,
+    borderColor: Colors.pink,
+    borderWidth: 1,
   },
   resultText: {
     margin: 5,
@@ -116,5 +141,29 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     backgroundColor: "#fff",
     justifyContent: "center", // Not necessary but fine to keep
+  },
+  secondaryButton: {
+    backgroundColor: Colors.pink,
+    padding: 12,
+    borderRadius: 10,
+    alignItems: "center",
+    marginTop: 12,
+  },
+  secondaryButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  startAgainButton: {
+    backgroundColor: Colors.accent,
+    padding: 12,
+    borderRadius: 10,
+    alignItems: "center",
+    marginTop: 24,
+  },
+  startAgainButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
   },
 });

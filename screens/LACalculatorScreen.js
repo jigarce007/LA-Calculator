@@ -8,35 +8,47 @@ import {
   Alert,
   FlatList,
   TouchableOpacity,
+  Switch
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { LA_DRUGS } from "../data/toxicData";
 
 export default function LACalculatorScreen({ route, navigation }) {
   const { dosingWeight } = route.params;
-
   const [selectedLA, setSelectedLA] = useState(LA_DRUGS[0].name);
   const [selectedConcentration, setSelectedConcentration] = useState(
     LA_DRUGS[0].concentrations[0]
   );
+  const [useCustomConcentration, setUseCustomConcentration] = useState(false);
+  const [customConcentration, setCustomConcentration] = useState("");
   const [volume, setVolume] = useState("");
   const [entries, setEntries] = useState([]);
   const [totalPercentUsed, setTotalPercentUsed] = useState(0);
 
   const drug = LA_DRUGS.find((d) => d.name === selectedLA);
   const numericWeight = Number(dosingWeight) || 0;
+
+  const effectiveConcentration = useCustomConcentration
+    ? parseFloat(customConcentration)
+    : selectedConcentration;
+
   const maxDose = drug.toxicDose * numericWeight;
-  const maxVolume = maxDose / selectedConcentration;
+  const maxVolume = maxDose / effectiveConcentration;
 
   const addDrug = () => {
     const vol = parseFloat(volume);
-    if (isNaN(vol) || vol <= 0) {
-      Alert.alert("Invalid Volume", "Enter a valid volume.");
+    const conc = effectiveConcentration;
+
+    if (isNaN(vol) || vol <= 0 || isNaN(conc) || conc <= 0) {
+      Alert.alert(
+        "Invalid Input",
+        "Please enter valid concentration and volume."
+      );
       return;
     }
 
-    const doseUsed = vol * selectedConcentration;
-    const percentUsed = (doseUsed / (drug.toxicDose * dosingWeight)) * 100;
+    const doseUsed = vol * conc;
+    const percentUsed = (doseUsed / maxDose) * 100;
     const newTotal = totalPercentUsed + percentUsed;
 
     if (newTotal > 100) {
@@ -47,15 +59,17 @@ export default function LACalculatorScreen({ route, navigation }) {
     const newEntry = {
       id: entries.length + 1,
       name: selectedLA,
-      concentration: selectedConcentration,
+      concentration: conc,
       volume: vol,
       dose: doseUsed.toFixed(1),
-      percent: percentUsed.toFixed(1),
+      percent: percentUsed.toFixed(2), // ✅ 2 decimal places
     };
 
     setEntries([...entries, newEntry]);
     setTotalPercentUsed(newTotal);
     setVolume("");
+    setCustomConcentration("");
+    setUseCustomConcentration(false);
   };
 
   const canAddMore = totalPercentUsed < 95;
@@ -68,7 +82,7 @@ export default function LACalculatorScreen({ route, navigation }) {
           {isNaN(dosingWeight) ? "Invalid" : Number(dosingWeight).toFixed(2)} kg
         </Text>
         <Text style={styles.subtitle}>
-          Total Toxic Dose Used: {totalPercentUsed.toFixed(1)}%
+          Total Toxic Dose Used: {totalPercentUsed.toFixed(2)}%
         </Text>
 
         {canAddMore ? (
@@ -95,30 +109,50 @@ export default function LACalculatorScreen({ route, navigation }) {
               </Picker>
             </View>
 
-            <Text style={styles.label}>Concentration (mg/ml):</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={selectedConcentration}
-                onValueChange={setSelectedConcentration}
-                style={styles.picker}
-              >
-                {drug.concentrations.map((c, i) => (
-                  <Picker.Item
-                    label={`${c} mg/ml (${(c / 10).toFixed(1)}%)`}
-                    value={c}
-                    key={i}
-                    style={styles.pickerItem}
-                  />
-                ))}
-              </Picker>
-            </View>
+            <Text style={styles.label}>Use Custom Concentration?</Text>
+            <Switch
+              value={useCustomConcentration}
+              onValueChange={setUseCustomConcentration}
+            />
+
+            {useCustomConcentration ? (
+              <TextInput
+                placeholder="Enter custom concentration (mg/ml)"
+                value={customConcentration}
+                onChangeText={setCustomConcentration}
+                keyboardType="numeric"
+                style={styles.input}
+                placeholderTextColor="#999"
+              />
+            ) : (
+              <>
+                <Text style={styles.label}>Concentration (mg/ml):</Text>
+                <View style={styles.pickerContainer}>
+                  <Picker
+                    selectedValue={selectedConcentration}
+                    onValueChange={setSelectedConcentration}
+                    style={styles.picker}
+                  >
+                    {drug.concentrations.map((c, i) => (
+                      <Picker.Item
+                        label={`${c} mg/ml (${(c / 10).toFixed(2)}%)`} // ✅ 2 decimals
+                        value={c}
+                        key={i}
+                        style={styles.pickerItem}
+                      />
+                    ))}
+                  </Picker>
+                </View>
+              </>
+            )}
+
             <TextInput
               placeholder="Planned Volume (ml)"
               value={volume}
-              placeholderTextColor="#999"
               onChangeText={setVolume}
               keyboardType="numeric"
               style={styles.input}
+              placeholderTextColor="#999"
             />
 
             <TouchableOpacity style={styles.addButton} onPress={addDrug}>
@@ -143,7 +177,7 @@ export default function LACalculatorScreen({ route, navigation }) {
             <View style={styles.entry}>
               <Text>
                 {item.name} {item.concentration} mg/ml (
-                {(item.concentration / 10).toFixed(1)}%)
+                {(item.concentration / 10).toFixed(2)}%)
               </Text>
               <Text>Volume: {item.volume} ml</Text>
               <Text>
@@ -170,7 +204,6 @@ export default function LACalculatorScreen({ route, navigation }) {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -253,9 +286,9 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     padding: 10,
     borderWidth: 1,
-    borderColor: Colors.accent,
+    borderColor: Colors.success,
     borderRadius: 8,
-    backgroundColor: "#f4ffff",
+    backgroundColor: Colors.lightgreen,
   },
   pickerContainer: {
     width: "100%",

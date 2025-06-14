@@ -8,6 +8,7 @@ import DisclaimerScreen from "./screens/DisclaimerScreen";
 import IBWScreen from "./screens/IBWScreen";
 import LACalculatorScreen from "./screens/LACalculatorScreen";
 import { RemainingVolumeScreen } from "./screens/RemainingVolumeScreen";
+import InjectionPlanScreen from "./screens/InjectionPlanScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -49,6 +50,11 @@ export default function App() {
             name="RemainingVolume"
             component={RemainingVolumeScreen}
             options={{ title: "Remaining Volume" }} // shows back button
+          />
+          <Stack.Screen
+            name="InjectionPlan"
+            component={InjectionPlanScreen}
+            options={{ headerShown: false }}
           />
         </Stack.Navigator>
       </NavigationContainer>

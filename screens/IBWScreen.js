@@ -12,7 +12,7 @@ import {
 import { Picker } from "@react-native-picker/picker";
 
 export default function IBWScreen({ navigation }) {
-  const [gender, setGender] = useState("M"); // default to M
+  const [sex, setSex] = useState("M");
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
 
@@ -20,20 +20,19 @@ export default function IBWScreen({ navigation }) {
     const h = parseFloat(height);
     const w = parseFloat(weight);
 
-    if (!["M", "F"].includes(gender) || isNaN(h) || isNaN(w)) {
+    if (!["M", "F"].includes(sex) || isNaN(h) || isNaN(w)) {
       Alert.alert(
         "Invalid input",
-        "Please enter valid gender, height, and weight."
+        "Please enter valid sex, height, and weight."
       );
       return;
     }
 
-    const ibw = gender === "M" ? 50 + 0.9 * (h - 152) : 45.5 + 0.9 * (h - 152);
-
+    const ibw = sex === "M" ? 50 + 0.9 * (h - 152) : 45.5 + 0.9 * (h - 152);
     const dosingWeight = Math.min(ibw, w);
 
-    navigation.navigate("Calculator", {
-      gender,
+    navigation.navigate("InjectionPlan", {
+      sex,
       height: h,
       weight: w,
       ibw: ibw.toFixed(2),
@@ -43,17 +42,14 @@ export default function IBWScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Image
-        style={styles.logo}
-        source={require("../assets/adaptive-icon.png")}
-      />
+      <Image style={styles.logo} source={require("../assets/logoround.png")} />
       <Text style={styles.title}>Enter Patient Details</Text>
 
-      <Text style={styles.label}>Gender</Text>
+      <Text style={styles.label}>Sex</Text>
       <View style={styles.pickerContainer}>
         <Picker
-          selectedValue={gender}
-          onValueChange={(val) => setGender(val)}
+          selectedValue={sex}
+          onValueChange={(val) => setSex(val)}
           style={styles.picker}
         >
           <Picker.Item style={styles.pickerItem} label="Male" value="M" />
@@ -145,8 +141,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   logo: {
-    width: 100,
-    height: 100,
+    width: 150,
+    height: 150,
     alignSelf: "center",
     fontWeight: "bold",
     backgroundColor: Colors.white,
