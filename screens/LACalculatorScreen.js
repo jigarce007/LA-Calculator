@@ -8,7 +8,7 @@ import {
   Alert,
   FlatList,
   TouchableOpacity,
-  Switch
+  Switch,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { LA_DRUGS } from "../data/toxicData";
@@ -103,7 +103,6 @@ export default function LACalculatorScreen({ route, navigation }) {
                     label={drug.name}
                     value={drug.name}
                     key={drug.name}
-                    style={styles.pickerItem}
                   />
                 ))}
               </Picker>
@@ -135,10 +134,9 @@ export default function LACalculatorScreen({ route, navigation }) {
                   >
                     {drug.concentrations.map((c, i) => (
                       <Picker.Item
-                        label={`${c} mg/ml (${(c / 10).toFixed(2)}%)`} // ✅ 2 decimals
+                        label={`${c} mg/ml (${(c / 10).toFixed(2)}%)`}
                         value={c}
                         key={i}
-                        style={styles.pickerItem}
                       />
                     ))}
                   </Picker>

@@ -8,4 +8,5 @@ export const Colors = {
   textPrimary: "#333",
   pink: "#e86186",
   lightPink: "#fce7ec",
+  accentlight: "#a68bdb",
 };
