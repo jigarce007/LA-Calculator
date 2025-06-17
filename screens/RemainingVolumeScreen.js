@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,10 +10,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Dimensions,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { LA_DRUGS } from "../data/toxicData";
 import { Colors } from "../theme";
+import { ProgressChart, PieChart } from "react-native-chart-kit";
 
 export function RemainingVolumeScreen({ route, navigation }) {
   const { dosingWeight, entries } = route.params;
@@ -27,19 +29,45 @@ export function RemainingVolumeScreen({ route, navigation }) {
 
   const drug = LA_DRUGS.find((d) => d.name === selectedLA);
   const totalAllowedDose = drug.toxicDose * dosingWeight;
-  const totalUsedDose = entries
+  const totalUsedDoseAll = entries.reduce(
+    (sum, e) => sum + parseFloat(e.dose),
+    0
+  );
+  const totalUsedDoseThisDrug = entries
     .filter((e) => e.name === selectedLA)
     .reduce((sum, e) => sum + parseFloat(e.dose), 0);
+
+  const percentUsedAll = (totalUsedDoseAll / totalAllowedDose) * 100;
+  const percentUsedThis = (totalUsedDoseThisDrug / totalAllowedDose) * 100;
 
   const activeConcentration = isCustomConcentration
     ? parseFloat(customConcentration) || 0
     : selectedConcentration;
 
-  const remainingDose = Math.max(0, totalAllowedDose - totalUsedDose);
+  const remainingDose = Math.max(0, totalAllowedDose - totalUsedDoseAll);
   const remainingVolume =
     activeConcentration > 0
       ? (remainingDose / activeConcentration).toFixed(2)
       : "0.00";
+
+  const chartWidth = Dimensions.get("window").width - 40;
+
+  useEffect(() => {
+    if (percentUsedAll >= 90) {
+      Alert.alert(
+        "Warning",
+        `You have already used ${percentUsedAll.toFixed(
+          2
+        )}% of the total toxic dose! Proceed with caution.`
+      );
+    }
+  }, [percentUsedAll]);
+
+  const getBarColor = (percent) => {
+    if (percent < 70) return Colors.success;
+    if (percent < 90) return Colors.warning;
+    return Colors.danger;
+  };
 
   return (
     <KeyboardAvoidingView
@@ -53,7 +81,6 @@ export function RemainingVolumeScreen({ route, navigation }) {
         <Text style={styles.title}>Remaining Volume Calculator</Text>
         <Text style={styles.subtitle}>Dosing Weight: {dosingWeight} kg</Text>
 
-        {/* LA Drug Picker */}
         <Text style={styles.label}>Select LA:</Text>
         <View style={styles.pickerContainer}>
           <Picker
@@ -75,11 +102,10 @@ export function RemainingVolumeScreen({ route, navigation }) {
           </Picker>
         </View>
 
-        {/* Concentration Picker or Custom Input */}
         <Text style={styles.label}>Concentration (mg/ml):</Text>
         {isCustomConcentration ? (
           <TextInput
-            placeholder="Custom Concentration (mg/ml)"
+            placeholder="Custom Concentration"
             placeholderTextColor="#999"
             value={customConcentration}
             onChangeText={setCustomConcentration}
@@ -104,7 +130,6 @@ export function RemainingVolumeScreen({ route, navigation }) {
           </View>
         )}
 
-        {/* Custom Switch */}
         <View style={styles.switchRow}>
           <Text style={styles.switchLabel}>Use Custom Concentration</Text>
           <Switch
@@ -119,17 +144,61 @@ export function RemainingVolumeScreen({ route, navigation }) {
           />
         </View>
 
-        {/* Result */}
         <View style={styles.resultBox}>
-          <Text style={styles.resultText}>
-            Remaining Dose: {remainingDose.toFixed(2)} mg
-          </Text>
-          <Text style={styles.resultText}>
-            Remaining Volume: {remainingVolume} ml
-          </Text>
+          <Text style={styles.resultHeading}>Remaining Dose & Volume</Text>
+
+          <View style={styles.resultContentRow}>
+            <View style={styles.pieChartContainer}>
+              <PieChart
+                data={[
+                  {
+                    name: "Used",
+                    population: totalUsedDoseAll,
+                    color: Colors.success,
+                    legendFontColor: "#333",
+                    legendFontSize: 12,
+                  },
+                  {
+                    name: "Remaining",
+                    population: remainingDose,
+                    color: "#d3d3d3",
+                    legendFontColor: "#999",
+                    legendFontSize: 12,
+                  },
+                ]}
+                width={140}
+                height={120}
+                chartConfig={{
+                  backgroundColor: "#fff",
+                  backgroundGradientFrom: "#fff",
+                  backgroundGradientTo: "#fff",
+                  color: () => "#000",
+                }}
+                accessor="population"
+                backgroundColor="transparent"
+                center={[20, 0]}
+                hasLegend={false}
+                absolute
+              />
+            </View>
+
+            <View style={styles.resultDetails}>
+              <Text style={styles.resultLabel}>Total Used:</Text>
+              <Text style={styles.resultValue}>
+                {totalUsedDoseAll.toFixed(1)} mg ({percentUsedAll.toFixed(1)}%)
+              </Text>
+
+              <Text style={styles.resultLabel}>Remaining Dose:</Text>
+              <Text style={styles.resultValue}>
+                {remainingDose.toFixed(1)} mg
+              </Text>
+
+              <Text style={styles.resultLabel}>Remaining Volume:</Text>
+              <Text style={styles.resultValue}>{remainingVolume} ml</Text>
+            </View>
+          </View>
         </View>
 
-        {/* Start Again Button */}
         <TouchableOpacity
           style={styles.startAgainButton}
           onPress={() =>
@@ -152,72 +221,101 @@ export function RemainingVolumeScreen({ route, navigation }) {
     </KeyboardAvoidingView>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     padding: 20,
   },
   title: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "bold",
-    marginBottom: 10,
+    marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
-    marginBottom: 20,
+    fontSize: 14,
+    marginBottom: 16,
   },
   label: {
-    marginTop: 10,
+    marginTop: 8,
     fontWeight: "600",
-  },
-  picker: {
-    width: "100%",
-    height: 50,
-    color: "#000",
-    fontSize: 16,
+    fontSize: 14,
   },
   pickerContainer: {
     width: "100%",
-    height: 50,
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 5,
-    overflow: "hidden",
     backgroundColor: "#fff",
     justifyContent: "center",
+    paddingHorizontal: 10,
+    paddingVertical: Platform.OS === "ios" ? 4 : 0,
+  },
+  picker: {
+    width: "100%",
+    color: "#000",
+    fontSize: 14,
   },
   input: {
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 5,
     paddingHorizontal: 10,
-    height: 50,
-    marginTop: 10,
-    fontSize: 16,
+    height: 48,
+    marginTop: 8,
+    fontSize: 14,
     backgroundColor: "#fff",
   },
   switchRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginTop: 10,
+    marginTop: 12,
   },
   switchLabel: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
   },
+  progressContainer: {
+    marginTop: 16,
+  },
+  progressLabel: {
+    fontSize: 13,
+    marginBottom: 4,
+  },
   resultBox: {
-    marginTop: 20,
-    padding: 15,
+    marginTop: 16,
+    padding: 14,
     backgroundColor: Colors.lightPink,
     borderRadius: 10,
     borderColor: Colors.pink,
     borderWidth: 1,
   },
-  resultText: {
-    margin: 5,
+  resultHeading: {
     fontSize: 16,
-    fontWeight: "500",
+    fontWeight: "600",
+    marginBottom: 10,
+    color: Colors.pink,
+    textAlign: "center",
+  },
+  resultContentRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  resultDetails: {
+    flex: 1,
+    paddingLeft: 20,
+  },
+  resultLabel: {
+    fontSize: 13,
+    color: "#555",
+    marginTop: 4,
+  },
+  resultValue: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#000",
   },
   startAgainButton: {
     backgroundColor: Colors.accent,
@@ -229,6 +327,6 @@ const styles = StyleSheet.create({
   startAgainButtonText: {
     color: "#fff",
     fontWeight: "bold",
-    fontSize: 16,
+    fontSize: 14,
   },
 });

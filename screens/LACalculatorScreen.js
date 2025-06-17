@@ -11,6 +11,8 @@ import {
   Switch,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
+import { ProgressBar } from "react-native-paper";
+import { Ionicons } from "@expo/vector-icons";
 import { LA_DRUGS } from "../data/toxicData";
 
 export default function LACalculatorScreen({ route, navigation }) {
@@ -62,7 +64,7 @@ export default function LACalculatorScreen({ route, navigation }) {
       concentration: conc,
       volume: vol,
       dose: doseUsed.toFixed(1),
-      percent: percentUsed.toFixed(2), // ✅ 2 decimal places
+      percent: percentUsed.toFixed(2),
     };
 
     setEntries([...entries, newEntry]);
@@ -70,6 +72,16 @@ export default function LACalculatorScreen({ route, navigation }) {
     setVolume("");
     setCustomConcentration("");
     setUseCustomConcentration(false);
+  };
+
+  const deleteEntry = (id) => {
+    const updatedEntries = entries.filter((entry) => entry.id !== id);
+    const updatedTotal = updatedEntries.reduce(
+      (sum, entry) => sum + parseFloat(entry.percent),
+      0
+    );
+    setEntries(updatedEntries);
+    setTotalPercentUsed(updatedTotal);
   };
 
   const canAddMore = totalPercentUsed < 95;
@@ -84,6 +96,23 @@ export default function LACalculatorScreen({ route, navigation }) {
         <Text style={styles.subtitle}>
           Total Toxic Dose Used: {totalPercentUsed.toFixed(2)}%
         </Text>
+
+        <View style={styles.progressBarContainer}>
+          <ProgressBar
+            progress={totalPercentUsed / 100}
+            color={
+              totalPercentUsed > 85
+                ? "red"
+                : totalPercentUsed > 50
+                ? "orange"
+                : "green"
+            }
+            style={styles.progressBar}
+          />
+          <Text style={styles.progressText}>
+            {totalPercentUsed.toFixed(2)}% of Toxic Dose Used
+          </Text>
+        </View>
 
         {canAddMore ? (
           <View style={styles.form}>
@@ -172,15 +201,23 @@ export default function LACalculatorScreen({ route, navigation }) {
           keyExtractor={(item) => item.id.toString()}
           contentContainerStyle={styles.listContainer}
           renderItem={({ item }) => (
-            <View style={styles.entry}>
-              <Text>
-                {item.name} {item.concentration} mg/ml (
-                {(item.concentration / 10).toFixed(2)}%)
-              </Text>
-              <Text>Volume: {item.volume} ml</Text>
-              <Text>
-                Dose: {item.dose} mg ({item.percent}%)
-              </Text>
+            <View style={styles.entryRow}>
+              <View style={styles.entryDetails}>
+                <Text style={styles.entrytext}>
+                  {item.name} — {item.concentration} mg/ml (
+                  {(item.concentration / 10).toFixed(2)}%)
+                </Text>
+                <Text style={styles.entrytext}>Volume: {item.volume} ml</Text>
+                <Text style={styles.entrytext}>
+                  Dose: {item.dose} mg ({item.percent}%)
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => deleteEntry(item.id)}
+                style={styles.iconButton}
+              >
+                <Ionicons name="close" size={20} color={Colors.accent} />
+              </TouchableOpacity>
             </View>
           )}
         />
@@ -202,6 +239,7 @@ export default function LACalculatorScreen({ route, navigation }) {
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -209,7 +247,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   topSection: {
-    paddingBottom: 10,
+    paddingBottom: 5,
   },
   bottomSection: {
     flex: 1,
@@ -218,11 +256,11 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   title: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "bold",
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
     marginVertical: 10,
   },
   form: {
@@ -230,18 +268,19 @@ const styles = StyleSheet.create({
   },
   label: {
     marginTop: 10,
+    fontSize: 14,
   },
   picker: {
     width: "100%",
-    height: 50, // Match container height
-    color: "#000", // Picker text color
-    fontSize: 16, // Adjust font size
+    height: 50,
+    color: "#000",
+    fontSize: 14,
   },
   input: {
-    fontSize: 16,
+    fontSize: 14,
     borderWidth: 1,
     borderColor: "#ccc",
-    padding: 12,
+    padding: 10,
     marginTop: 10,
     borderRadius: 10,
   },
@@ -255,7 +294,7 @@ const styles = StyleSheet.create({
   addButtonText: {
     color: "#fff",
     fontWeight: "bold",
-    fontSize: 16,
+    fontSize: 14,
   },
   secondaryButton: {
     backgroundColor: Colors.pink,
@@ -267,7 +306,7 @@ const styles = StyleSheet.create({
   secondaryButtonText: {
     color: "#fff",
     fontWeight: "bold",
-    fontSize: 16,
+    fontSize: 14,
   },
   warning: {
     marginTop: 20,
@@ -275,30 +314,54 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   resultTitle: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: "bold",
     marginBottom: 5,
     textAlign: "center",
   },
-  entry: {
-    marginBottom: 10,
+  entryRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     padding: 10,
     borderWidth: 1,
     borderColor: Colors.success,
     borderRadius: 8,
     backgroundColor: Colors.lightgreen,
+    marginBottom: 10,
+  },
+  entryDetails: {
+    flex: 1,
+    paddingRight: 10,
+  },
+  entrytext: {
+    fontSize: 12,
+  },
+  iconButton: {
+    padding: 4,
   },
   pickerContainer: {
     width: "100%",
-    height: 50, // Slightly taller for better spacing
+    height: 50,
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 5,
     overflow: "hidden",
     backgroundColor: "#fff",
-    justifyContent: "center", // Not necessary but fine to keep
+    justifyContent: "center",
   },
-  pickerItem: {
-    fontSize: 14,
+  progressBarContainer: {
+    marginTop: 10,
+    marginBottom: 20,
+  },
+  progressBar: {
+    height: 12,
+    borderRadius: 6,
+  },
+  progressText: {
+    fontSize: 12,
+    textAlign: "center",
+    marginTop: 4,
+    color: "#333",
   },
 });
