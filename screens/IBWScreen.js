@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Alert,
   Image,
+  Platform,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 
@@ -15,6 +16,7 @@ export default function IBWScreen({ navigation }) {
   const [sex, setSex] = useState("M");
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
+  const [showSexPicker, setShowSexPicker] = useState(false);
 
   const calculateIBW = () => {
     const h = parseFloat(height);
@@ -46,16 +48,39 @@ export default function IBWScreen({ navigation }) {
       <Text style={styles.title}>Enter Patient Details</Text>
 
       <Text style={styles.label}>Sex</Text>
-      <View style={styles.pickerContainer}>
-        <Picker
-          selectedValue={sex}
-          onValueChange={(val) => setSex(val)}
-          style={styles.picker}
-        >
-          <Picker.Item style={styles.pickerItem} label="Male" value="M" />
-          <Picker.Item style={styles.pickerItem} label="Female" value="F" />
-        </Picker>
-      </View>
+      {Platform.OS === "ios" ? (
+        <>
+          <TouchableOpacity
+            style={styles.pickerDisplay}
+            onPress={() => setShowSexPicker(!showSexPicker)}
+          >
+            <Text>{sex === "M" ? "Male" : "Female"}</Text>
+          </TouchableOpacity>
+          {showSexPicker && (
+            <Picker
+              selectedValue={sex}
+              onValueChange={(val) => {
+                setSex(val);
+                setShowSexPicker(false);
+              }}
+            >
+              <Picker.Item label="Male" value="M" />
+              <Picker.Item label="Female" value="F" />
+            </Picker>
+          )}
+        </>
+      ) : (
+        <View style={styles.pickerContainer}>
+          <Picker
+            selectedValue={sex}
+            onValueChange={(val) => setSex(val)}
+            style={styles.picker}
+          >
+            <Picker.Item label="Male" value="M" />
+            <Picker.Item label="Female" value="F" />
+          </Picker>
+        </View>
+      )}
 
       <TextInput
         placeholder="Height (cm)"
@@ -85,7 +110,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.white,
-
     padding: 20,
   },
   title: {
@@ -101,9 +125,28 @@ const styles = StyleSheet.create({
   },
   picker: {
     width: "100%",
-    height: 50, // Match container height
-    color: "#000", // Picker text color
-    fontSize: 16, // Adjust font size
+    height: 50,
+    color: "#000",
+    fontSize: 16,
+  },
+  pickerContainer: {
+    width: "100%",
+    height: 50,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 5,
+    overflow: "hidden",
+    backgroundColor: "#fff",
+    justifyContent: "center",
+  },
+  pickerDisplay: {
+    width: "100%",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 5,
+    padding: 12,
+    backgroundColor: "#f0f0f0",
+    marginBottom: 6,
   },
   input: {
     borderWidth: 1,
@@ -127,24 +170,10 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 16,
   },
-  pickerContainer: {
-    width: "100%",
-    height: 50, // Slightly taller for better spacing
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 5,
-    overflow: "hidden",
-    backgroundColor: "#fff",
-    justifyContent: "center", // Not necessary but fine to keep
-  },
-  pickerItem: {
-    fontSize: 14,
-  },
   logo: {
     width: 150,
     height: 150,
     alignSelf: "center",
-    fontWeight: "bold",
     backgroundColor: Colors.white,
   },
 });

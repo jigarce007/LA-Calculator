@@ -15,12 +15,13 @@ import {
 import { Picker } from "@react-native-picker/picker";
 import { LA_DRUGS } from "../data/toxicData";
 import { Colors } from "../theme";
-import { ProgressChart, PieChart } from "react-native-chart-kit";
+import { PieChart } from "react-native-chart-kit";
 
 export function RemainingVolumeScreen({ route, navigation }) {
   const { dosingWeight, entries } = route.params;
-
-  const [selectedLA, setSelectedLA] = useState(LA_DRUGS[0].name);
+  const lastUsedLA =
+    entries.length > 0 ? entries[entries.length - 1].name : LA_DRUGS[0].name;
+  const [selectedLA, setSelectedLA] = useState(lastUsedLA);
   const [selectedConcentration, setSelectedConcentration] = useState(
     LA_DRUGS[0].concentrations[0]
   );
@@ -51,6 +52,8 @@ export function RemainingVolumeScreen({ route, navigation }) {
       : "0.00";
 
   const chartWidth = Dimensions.get("window").width - 40;
+  const [showLASelectPicker, setShowLASelectPicker] = useState(false);
+  const [showConcentrationPicker, setShowConcentrationPicker] = useState(false);
 
   useEffect(() => {
     if (percentUsedAll >= 90) {
@@ -82,25 +85,55 @@ export function RemainingVolumeScreen({ route, navigation }) {
         <Text style={styles.subtitle}>Dosing Weight: {dosingWeight} kg</Text>
 
         <Text style={styles.label}>Select LA:</Text>
-        <View style={styles.pickerContainer}>
-          <Picker
-            selectedValue={selectedLA}
-            onValueChange={(val) => {
-              setSelectedLA(val);
-              const newDrug = LA_DRUGS.find((d) => d.name === val);
-              setSelectedConcentration(newDrug?.concentrations?.[0] || 0);
-            }}
-            style={styles.picker}
-          >
-            {LA_DRUGS.map((drug) => (
-              <Picker.Item
-                label={drug.name}
-                value={drug.name}
-                key={drug.name}
-              />
-            ))}
-          </Picker>
-        </View>
+        {Platform.OS === "ios" ? (
+          <>
+            <TouchableOpacity
+              style={styles.pickerTouchableIOS}
+              onPress={() => setShowLASelectPicker(!showLASelectPicker)}
+            >
+              <Text style={styles.pickerText}>{selectedLA}</Text>
+            </TouchableOpacity>
+            {showLASelectPicker && (
+              <Picker
+                selectedValue={selectedLA}
+                onValueChange={(val) => {
+                  setSelectedLA(val);
+                  const newDrug = LA_DRUGS.find((d) => d.name === val);
+                  setSelectedConcentration(newDrug?.concentrations?.[0] || 0);
+                  setShowLASelectPicker(false);
+                }}
+              >
+                {LA_DRUGS.map((drug) => (
+                  <Picker.Item
+                    key={drug.name}
+                    label={drug.name}
+                    value={drug.name}
+                  />
+                ))}
+              </Picker>
+            )}
+          </>
+        ) : (
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={selectedLA}
+              onValueChange={(val) => {
+                setSelectedLA(val);
+                const newDrug = LA_DRUGS.find((d) => d.name === val);
+                setSelectedConcentration(newDrug?.concentrations?.[0] || 0);
+              }}
+              style={styles.picker}
+            >
+              {LA_DRUGS.map((drug) => (
+                <Picker.Item
+                  key={drug.name}
+                  label={drug.name}
+                  value={drug.name}
+                />
+              ))}
+            </Picker>
+          </View>
+        )}
 
         <Text style={styles.label}>Concentration (mg/ml):</Text>
         {isCustomConcentration ? (
@@ -112,6 +145,38 @@ export function RemainingVolumeScreen({ route, navigation }) {
             keyboardType="numeric"
             style={styles.input}
           />
+        ) : Platform.OS === "ios" ? (
+          <>
+            <TouchableOpacity
+              style={styles.pickerTouchableIOS}
+              onPress={() =>
+                setShowConcentrationPicker(!showConcentrationPicker)
+              }
+            >
+              <Text style={styles.pickerText}>
+                {`${selectedConcentration} mg/ml (${(
+                  selectedConcentration / 10
+                ).toFixed(2)}%)`}
+              </Text>
+            </TouchableOpacity>
+            {showConcentrationPicker && (
+              <Picker
+                selectedValue={selectedConcentration}
+                onValueChange={(val) => {
+                  setSelectedConcentration(val);
+                  setShowConcentrationPicker(false);
+                }}
+              >
+                {drug?.concentrations?.map((c, i) => (
+                  <Picker.Item
+                    label={`${c} mg/ml (${(c / 10).toFixed(2)}%)`}
+                    value={c}
+                    key={i}
+                  />
+                ))}
+              </Picker>
+            )}
+          </>
         ) : (
           <View style={styles.pickerContainer}>
             <Picker
@@ -245,11 +310,29 @@ const styles = StyleSheet.create({
     width: "100%",
     borderWidth: 1,
     borderColor: "#ccc",
-    borderRadius: 5,
+    borderRadius: 6,
     backgroundColor: "#fff",
     justifyContent: "center",
-    paddingHorizontal: 10,
-    paddingVertical: Platform.OS === "ios" ? 4 : 0,
+    paddingHorizontal: 12,
+    paddingVertical: 0,
+    minHeight: 48,
+    marginTop: 4,
+  },
+  pickerTouchableIOS: {
+    width: "100%",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 6,
+    backgroundColor: "#fff",
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    minHeight: 48,
+    justifyContent: "center",
+    marginTop: 4,
+  },
+  pickerText: {
+    fontSize: 14,
+    color: "#000",
   },
   picker: {
     width: "100%",
@@ -259,8 +342,8 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
     borderColor: "#ccc",
-    borderRadius: 5,
-    paddingHorizontal: 10,
+    borderRadius: 6,
+    paddingHorizontal: 12,
     height: 48,
     marginTop: 8,
     fontSize: 14,
@@ -275,13 +358,6 @@ const styles = StyleSheet.create({
   switchLabel: {
     fontSize: 14,
     fontWeight: "600",
-  },
-  progressContainer: {
-    marginTop: 16,
-  },
-  progressLabel: {
-    fontSize: 13,
-    marginBottom: 4,
   },
   resultBox: {
     marginTop: 16,
@@ -302,6 +378,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+  },
+  pieChartContainer: {
+    width: 140,
+    height: 120,
   },
   resultDetails: {
     flex: 1,
@@ -328,5 +408,20 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
     fontSize: 14,
+  },
+  pickerTouchableIOS: {
+    width: "100%",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 5,
+    backgroundColor: "#fff",
+    justifyContent: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 12,
+    marginTop: 4,
+  },
+  pickerText: {
+    fontSize: 14,
+    color: "#000",
   },
 });

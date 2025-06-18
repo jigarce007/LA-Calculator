@@ -1,18 +1,19 @@
 import React, { useState } from "react";
-import { Colors } from "../theme";
 import {
   View,
   Text,
-  StyleSheet,
   TextInput,
+  TouchableOpacity,
   Alert,
   FlatList,
-  TouchableOpacity,
+  Platform,
   Switch,
+  StyleSheet,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { ProgressBar } from "react-native-paper";
 import { Ionicons } from "@expo/vector-icons";
+import { Colors } from "../theme";
 import { LA_DRUGS } from "../data/toxicData";
 
 export default function LACalculatorScreen({ route, navigation }) {
@@ -26,6 +27,8 @@ export default function LACalculatorScreen({ route, navigation }) {
   const [volume, setVolume] = useState("");
   const [entries, setEntries] = useState([]);
   const [totalPercentUsed, setTotalPercentUsed] = useState(0);
+  const [showLAPicker, setShowLAPicker] = useState(false);
+  const [showConcentrationPicker, setShowConcentrationPicker] = useState(false);
 
   const drug = LA_DRUGS.find((d) => d.name === selectedLA);
   const numericWeight = Number(dosingWeight) || 0;
@@ -63,8 +66,8 @@ export default function LACalculatorScreen({ route, navigation }) {
       name: selectedLA,
       concentration: conc,
       volume: vol,
-      dose: doseUsed.toFixed(1),
-      percent: percentUsed.toFixed(2),
+      dose: doseUsed,
+      percent: percentUsed,
     };
 
     setEntries([...entries, newEntry]);
@@ -117,25 +120,55 @@ export default function LACalculatorScreen({ route, navigation }) {
         {canAddMore ? (
           <View style={styles.form}>
             <Text style={styles.label}>Select Local Anaesthetic:</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={selectedLA}
-                onValueChange={(val) => {
-                  setSelectedLA(val);
-                  const newDrug = LA_DRUGS.find((d) => d.name === val);
-                  setSelectedConcentration(newDrug.concentrations[0]);
-                }}
-                style={styles.picker}
-              >
-                {LA_DRUGS.map((drug) => (
-                  <Picker.Item
-                    label={drug.name}
-                    value={drug.name}
-                    key={drug.name}
-                  />
-                ))}
-              </Picker>
-            </View>
+            {Platform.OS === "ios" ? (
+              <>
+                <TouchableOpacity
+                  style={styles.pickerDisplay}
+                  onPress={() => setShowLAPicker(!showLAPicker)}
+                >
+                  <Text>{selectedLA}</Text>
+                </TouchableOpacity>
+                {showLAPicker && (
+                  <Picker
+                    selectedValue={selectedLA}
+                    onValueChange={(val) => {
+                      setSelectedLA(val);
+                      const newDrug = LA_DRUGS.find((d) => d.name === val);
+                      setSelectedConcentration(newDrug.concentrations[0]);
+                      setShowLAPicker(false);
+                    }}
+                  >
+                    {LA_DRUGS.map((drug) => (
+                      <Picker.Item
+                        label={drug.name}
+                        value={drug.name}
+                        key={drug.name}
+                      />
+                    ))}
+                  </Picker>
+                )}
+              </>
+            ) : (
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={selectedLA}
+                  onValueChange={(val) => {
+                    setSelectedLA(val);
+                    const newDrug = LA_DRUGS.find((d) => d.name === val);
+                    setSelectedConcentration(newDrug.concentrations[0]);
+                  }}
+                  style={styles.picker}
+                >
+                  {LA_DRUGS.map((drug) => (
+                    <Picker.Item
+                      label={drug.name}
+                      value={drug.name}
+                      key={drug.name}
+                    />
+                  ))}
+                </Picker>
+              </View>
+            )}
 
             <Text style={styles.label}>Use Custom Concentration?</Text>
             <Switch
@@ -155,21 +188,54 @@ export default function LACalculatorScreen({ route, navigation }) {
             ) : (
               <>
                 <Text style={styles.label}>Concentration (mg/ml):</Text>
-                <View style={styles.pickerContainer}>
-                  <Picker
-                    selectedValue={selectedConcentration}
-                    onValueChange={setSelectedConcentration}
-                    style={styles.picker}
-                  >
-                    {drug.concentrations.map((c, i) => (
-                      <Picker.Item
-                        label={`${c} mg/ml (${(c / 10).toFixed(2)}%)`}
-                        value={c}
-                        key={i}
-                      />
-                    ))}
-                  </Picker>
-                </View>
+                {Platform.OS === "ios" ? (
+                  <>
+                    <TouchableOpacity
+                      style={styles.pickerDisplay}
+                      onPress={() =>
+                        setShowConcentrationPicker(!showConcentrationPicker)
+                      }
+                    >
+                      <Text>
+                        {selectedConcentration} mg/ml (
+                        {(selectedConcentration / 10).toFixed(2)}%)
+                      </Text>
+                    </TouchableOpacity>
+                    {showConcentrationPicker && (
+                      <Picker
+                        selectedValue={selectedConcentration}
+                        onValueChange={(val) => {
+                          setSelectedConcentration(val);
+                          setShowConcentrationPicker(false);
+                        }}
+                      >
+                        {drug.concentrations.map((c, i) => (
+                          <Picker.Item
+                            label={`${c} mg/ml (${(c / 10).toFixed(2)}%)`}
+                            value={c}
+                            key={i}
+                          />
+                        ))}
+                      </Picker>
+                    )}
+                  </>
+                ) : (
+                  <View style={styles.pickerContainer}>
+                    <Picker
+                      selectedValue={selectedConcentration}
+                      onValueChange={setSelectedConcentration}
+                      style={styles.picker}
+                    >
+                      {drug.concentrations.map((c, i) => (
+                        <Picker.Item
+                          label={`${c} mg/ml (${(c / 10).toFixed(2)}%)`}
+                          value={c}
+                          key={i}
+                        />
+                      ))}
+                    </Picker>
+                  </View>
+                )}
               </>
             )}
 
@@ -243,102 +309,31 @@ export default function LACalculatorScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: Colors.white,
     padding: 20,
-    backgroundColor: "#fff",
-  },
-  topSection: {
-    paddingBottom: 5,
-  },
-  bottomSection: {
-    flex: 1,
-  },
-  listContainer: {
-    paddingBottom: 40,
   },
   title: {
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  subtitle: {
-    fontSize: 14,
-    marginVertical: 10,
-  },
-  form: {
-    marginBottom: 20,
-  },
-  label: {
-    marginTop: 10,
-    fontSize: 14,
-  },
-  picker: {
-    width: "100%",
-    height: 50,
-    color: "#000",
-    fontSize: 14,
-  },
-  input: {
-    fontSize: 14,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 10,
-    marginTop: 10,
-    borderRadius: 10,
-  },
-  addButton: {
-    backgroundColor: Colors.accent,
-    padding: 12,
-    borderRadius: 10,
-    alignItems: "center",
-    marginTop: 15,
-  },
-  addButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 14,
-  },
-  secondaryButton: {
-    backgroundColor: Colors.pink,
-    padding: 12,
-    borderRadius: 10,
-    alignItems: "center",
-    marginTop: 12,
-  },
-  secondaryButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 14,
-  },
-  warning: {
-    marginTop: 20,
-    color: "red",
-    fontWeight: "bold",
-  },
-  resultTitle: {
-    fontSize: 14,
-    fontWeight: "bold",
-    marginBottom: 5,
-    textAlign: "center",
-  },
-  entryRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: 10,
-    borderWidth: 1,
-    borderColor: Colors.success,
-    borderRadius: 8,
-    backgroundColor: Colors.lightgreen,
+    fontSize: 20,
+    fontWeight: "600",
     marginBottom: 10,
   },
-  entryDetails: {
-    flex: 1,
-    paddingRight: 10,
+  subtitle: {
+    fontSize: 16,
+    marginBottom: 8,
   },
-  entrytext: {
-    fontSize: 12,
+  label: {
+    fontWeight: "600",
+    marginTop: 10,
+    marginBottom: 5,
   },
-  iconButton: {
-    padding: 4,
+  pickerDisplay: {
+    width: "100%",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 5,
+    padding: 12,
+    backgroundColor: "#f0f0f0",
+    marginBottom: 6,
   },
   pickerContainer: {
     width: "100%",
@@ -350,18 +345,94 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     justifyContent: "center",
   },
+  picker: {
+    width: "100%",
+    height: 50,
+    color: "#000",
+    fontSize: 16,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    padding: 10,
+    backgroundColor: "#fff",
+    marginVertical: 10,
+    borderRadius: 5,
+  },
+  addButton: {
+    backgroundColor: Colors.pink,
+    padding: 12,
+    borderRadius: 10,
+    alignItems: "center",
+    marginTop: 10,
+    width: "100%",
+  },
+  addButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  warning: {
+    color: "red",
+    marginTop: 10,
+    fontWeight: "bold",
+  },
   progressBarContainer: {
     marginTop: 10,
     marginBottom: 20,
   },
   progressBar: {
-    height: 12,
-    borderRadius: 6,
+    height: 10,
+    borderRadius: 5,
   },
   progressText: {
     fontSize: 12,
-    textAlign: "center",
-    marginTop: 4,
-    color: "#333",
+    color: "#555",
+    marginTop: 5,
+  },
+  form: {
+    marginTop: 10,
+  },
+  bottomSection: {
+    flex: 1,
+    marginTop: 10,
+  },
+  resultTitle: {
+    fontWeight: "600",
+    fontSize: 18,
+    marginBottom: 8,
+  },
+  listContainer: {
+    paddingBottom: 20,
+  },
+  entryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    backgroundColor: "#f9f9f9",
+    padding: 10,
+    marginBottom: 8,
+    borderRadius: 5,
+  },
+  entryDetails: {
+    flex: 1,
+  },
+  entrytext: {
+    fontSize: 14,
+  },
+  iconButton: {
+    paddingHorizontal: 10,
+    justifyContent: "center",
+  },
+  secondaryButton: {
+    backgroundColor: Colors.accent,
+    padding: 12,
+    borderRadius: 10,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  secondaryButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
   },
 });
