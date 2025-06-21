@@ -5,10 +5,15 @@ import {
   TextInput,
   TouchableOpacity,
   Alert,
-  FlatList,
   Platform,
   Switch,
   StyleSheet,
+  ScrollView,
+  KeyboardAvoidingView,
+  TouchableWithoutFeedback,
+  Keyboard,
+  Animated,
+  Easing,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { ProgressBar } from "react-native-paper";
@@ -38,7 +43,6 @@ export default function LACalculatorScreen({ route, navigation }) {
     : selectedConcentration;
 
   const maxDose = drug.toxicDose * numericWeight;
-  const maxVolume = maxDose / effectiveConcentration;
 
   const addDrug = () => {
     const vol = parseFloat(volume);
@@ -90,130 +94,92 @@ export default function LACalculatorScreen({ route, navigation }) {
   const canAddMore = totalPercentUsed < 95;
 
   return (
-    <View style={styles.container}>
-      <View style={styles.topSection}>
-        <Text style={styles.title}>
-          Dosing Weight:{" "}
-          {isNaN(dosingWeight) ? "Invalid" : Number(dosingWeight).toFixed(2)} kg
-        </Text>
-        <Text style={styles.subtitle}>
-          Total Toxic Dose Used: {totalPercentUsed.toFixed(2)}%
-        </Text>
-
-        <View style={styles.progressBarContainer}>
-          <ProgressBar
-            progress={totalPercentUsed / 100}
-            color={
-              totalPercentUsed > 85
-                ? "red"
-                : totalPercentUsed > 50
-                ? "orange"
-                : "green"
-            }
-            style={styles.progressBar}
-          />
-          <Text style={styles.progressText}>
-            {totalPercentUsed.toFixed(2)}% of Toxic Dose Used
-          </Text>
-        </View>
-
-        {canAddMore ? (
-          <View style={styles.form}>
-            <Text style={styles.label}>Select Local Anaesthetic:</Text>
-            {Platform.OS === "ios" ? (
-              <>
-                <TouchableOpacity
-                  style={styles.pickerDisplay}
-                  onPress={() => setShowLAPicker(!showLAPicker)}
-                >
-                  <Text>{selectedLA}</Text>
-                </TouchableOpacity>
-                {showLAPicker && (
-                  <Picker
-                    selectedValue={selectedLA}
-                    onValueChange={(val) => {
-                      setSelectedLA(val);
-                      const newDrug = LA_DRUGS.find((d) => d.name === val);
-                      setSelectedConcentration(newDrug.concentrations[0]);
-                      setShowLAPicker(false);
-                    }}
-                  >
-                    {LA_DRUGS.map((drug) => (
-                      <Picker.Item
-                        label={drug.name}
-                        value={drug.name}
-                        key={drug.name}
-                      />
-                    ))}
-                  </Picker>
-                )}
-              </>
-            ) : (
-              <View style={styles.pickerContainer}>
-                <Picker
-                  selectedValue={selectedLA}
-                  onValueChange={(val) => {
-                    setSelectedLA(val);
-                    const newDrug = LA_DRUGS.find((d) => d.name === val);
-                    setSelectedConcentration(newDrug.concentrations[0]);
-                  }}
-                  style={styles.picker}
-                >
-                  {LA_DRUGS.map((drug) => (
-                    <Picker.Item
-                      label={drug.name}
-                      value={drug.name}
-                      key={drug.name}
-                    />
-                  ))}
-                </Picker>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView
+          contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.topSection}>
+            <Text style={styles.title}>
+              Dosing Weight:{" "}
+              {isNaN(dosingWeight)
+                ? "Invalid"
+                : Number(dosingWeight).toFixed(2)}{" "}
+              kg
+            </Text>
+            <Text style={styles.subtitle}>
+              Total Toxic Dose Used: {totalPercentUsed.toFixed(2)}%
+            </Text>
+            {totalPercentUsed >= 90 && (
+              <View
+                style={[styles.warningBadge, { backgroundColor: "#F44336" }]}
+              >
+                <Text style={styles.warningBadgeText}>
+                  High Risk: Close to Toxic Limit
+                </Text>
               </View>
             )}
-
-            <Text style={styles.label}>Use Custom Concentration?</Text>
-            <Switch
-              value={useCustomConcentration}
-              onValueChange={setUseCustomConcentration}
-            />
-
-            {useCustomConcentration ? (
-              <TextInput
-                placeholder="Enter custom concentration (mg/ml)"
-                value={customConcentration}
-                onChangeText={setCustomConcentration}
-                keyboardType="numeric"
-                style={styles.input}
-                placeholderTextColor="#999"
+            <View style={styles.progressBarContainer}>
+              {entries.length > 0 && (
+                <View style={styles.drugSummaryBadge}>
+                  <Text style={styles.drugSummaryText}>
+                    💉{" "}
+                    {[...new Set(entries.map((entry) => entry.name))].join(
+                      ", "
+                    )}{" "}
+                    ({[...new Set(entries.map((entry) => entry.name))].length}{" "}
+                    drug{entries.length > 1 ? "s" : ""} added)
+                  </Text>
+                </View>
+              )}
+              <ProgressBar
+                progress={totalPercentUsed / 100}
+                color={
+                  totalPercentUsed > 85
+                    ? "red"
+                    : totalPercentUsed > 50
+                    ? "orange"
+                    : "green"
+                }
+                style={styles.progressBar}
               />
-            ) : (
-              <>
-                <Text style={styles.label}>Concentration (mg/ml):</Text>
+              <Text style={styles.progressText}>
+                {totalPercentUsed.toFixed(2)}% of Toxic Dose Used
+              </Text>
+            </View>
+
+            {canAddMore ? (
+              <View style={styles.form}>
+                <Text style={styles.formHeading}>Add Local Anaesthetic</Text>
+                <Text style={styles.label}>Select Local Anaesthetic:</Text>
                 {Platform.OS === "ios" ? (
                   <>
                     <TouchableOpacity
                       style={styles.pickerDisplay}
-                      onPress={() =>
-                        setShowConcentrationPicker(!showConcentrationPicker)
-                      }
+                      onPress={() => setShowLAPicker(!showLAPicker)}
                     >
-                      <Text>
-                        {selectedConcentration} mg/ml (
-                        {(selectedConcentration / 10).toFixed(2)}%)
-                      </Text>
+                      <Text>{selectedLA}</Text>
                     </TouchableOpacity>
-                    {showConcentrationPicker && (
+                    {showLAPicker && (
                       <Picker
-                        selectedValue={selectedConcentration}
+                        selectedValue={selectedLA}
                         onValueChange={(val) => {
-                          setSelectedConcentration(val);
-                          setShowConcentrationPicker(false);
+                          setSelectedLA(val);
+                          const newDrug = LA_DRUGS.find((d) => d.name === val);
+                          setSelectedConcentration(newDrug.concentrations[0]);
+                          setShowLAPicker(false);
                         }}
                       >
-                        {drug.concentrations.map((c, i) => (
+                        {LA_DRUGS.map((drug) => (
                           <Picker.Item
-                            label={`${c} mg/ml (${(c / 10).toFixed(2)}%)`}
-                            value={c}
-                            key={i}
+                            label={drug.name}
+                            value={drug.name}
+                            key={drug.name}
                           />
                         ))}
                       </Picker>
@@ -222,87 +188,170 @@ export default function LACalculatorScreen({ route, navigation }) {
                 ) : (
                   <View style={styles.pickerContainer}>
                     <Picker
-                      selectedValue={selectedConcentration}
-                      onValueChange={setSelectedConcentration}
+                      selectedValue={selectedLA}
+                      onValueChange={(val) => {
+                        setSelectedLA(val);
+                        const newDrug = LA_DRUGS.find((d) => d.name === val);
+                        setSelectedConcentration(newDrug.concentrations[0]);
+                      }}
                       style={styles.picker}
                     >
-                      {drug.concentrations.map((c, i) => (
+                      {LA_DRUGS.map((drug) => (
                         <Picker.Item
-                          label={`${c} mg/ml (${(c / 10).toFixed(2)}%)`}
-                          value={c}
-                          key={i}
+                          label={drug.name}
+                          value={drug.name}
+                          key={drug.name}
                         />
                       ))}
                     </Picker>
                   </View>
                 )}
-              </>
+
+                <Text style={styles.label}>Use Custom Concentration?</Text>
+                <Switch
+                  value={useCustomConcentration}
+                  onValueChange={setUseCustomConcentration}
+                />
+
+                {useCustomConcentration ? (
+                  <TextInput
+                    placeholder="Enter custom concentration (mg/ml)"
+                    value={customConcentration}
+                    onChangeText={setCustomConcentration}
+                    keyboardType="numeric"
+                    style={styles.input}
+                    placeholderTextColor="#999"
+                  />
+                ) : (
+                  <>
+                    <Text style={styles.label}>Concentration (mg/ml):</Text>
+                    {Platform.OS === "ios" ? (
+                      <>
+                        <TouchableOpacity
+                          style={styles.pickerDisplay}
+                          onPress={() =>
+                            setShowConcentrationPicker(!showConcentrationPicker)
+                          }
+                        >
+                          <Text>
+                            {selectedConcentration} mg/ml (
+                            {(selectedConcentration / 10).toFixed(2)}%)
+                          </Text>
+                        </TouchableOpacity>
+                        {showConcentrationPicker && (
+                          <Picker
+                            selectedValue={selectedConcentration}
+                            onValueChange={(val) => {
+                              setSelectedConcentration(val);
+                              setShowConcentrationPicker(false);
+                            }}
+                          >
+                            {drug.concentrations.map((c, i) => (
+                              <Picker.Item
+                                label={`${c} mg/ml (${(c / 10).toFixed(2)}%)`}
+                                value={c}
+                                key={i}
+                              />
+                            ))}
+                          </Picker>
+                        )}
+                      </>
+                    ) : (
+                      <View style={styles.pickerContainer}>
+                        <Picker
+                          selectedValue={selectedConcentration}
+                          onValueChange={setSelectedConcentration}
+                          style={styles.picker}
+                        >
+                          {drug.concentrations.map((c, i) => (
+                            <Picker.Item
+                              label={`${c} mg/ml (${(c / 10).toFixed(2)}%)`}
+                              value={c}
+                              key={i}
+                            />
+                          ))}
+                        </Picker>
+                      </View>
+                    )}
+                  </>
+                )}
+
+                <TextInput
+                  placeholder="Planned Volume (ml)"
+                  value={volume}
+                  onChangeText={setVolume}
+                  keyboardType="numeric"
+                  style={styles.input}
+                  placeholderTextColor="#999"
+                />
+
+                <TouchableOpacity style={styles.addButton} onPress={addDrug}>
+                  <Text style={styles.addButtonText}>
+                    Add Local Anaesthetic
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <Text style={styles.warning}>
+                Cumulative toxic dose ≥ 95%. No more LAs can be added.
+              </Text>
+            )}
+          </View>
+
+          <View style={styles.bottomSection}>
+            {entries.length > 0 && (
+              <Text style={styles.resultTitle}>Summary</Text>
             )}
 
-            <TextInput
-              placeholder="Planned Volume (ml)"
-              value={volume}
-              onChangeText={setVolume}
-              keyboardType="numeric"
-              style={styles.input}
-              placeholderTextColor="#999"
-            />
+            {entries.map((item) => (
+              <View style={styles.cardEntry} key={item.id}>
+                <View style={styles.cardHeader}>
+                  <Text style={styles.drugName}>{item.name}</Text>
+                  <TouchableOpacity
+                    onPress={() => deleteEntry(item.id)}
+                    style={styles.iconButton}
+                  >
+                    <Ionicons name="close" size={20} color={Colors.pink} />
+                  </TouchableOpacity>
+                </View>
 
-            <TouchableOpacity style={styles.addButton} onPress={addDrug}>
-              <Text style={styles.addButtonText}>Add Local Anaesthetic</Text>
+                <View style={styles.cardContentRow}>
+                  <Text style={styles.entryText}>
+                    {item.concentration} mg/ml (
+                    {(item.concentration / 10).toFixed(2)}%)
+                  </Text>
+                  <Text style={styles.entryText}>Volume: {item.volume} ml</Text>
+                </View>
+
+                <View style={styles.cardContentRow}>
+                  <Text style={styles.entryText}>
+                    Dose: {item.dose.toFixed(1)} mg
+                  </Text>
+                  <Text style={styles.entryText}>
+                    {item.percent.toFixed(1)}% of toxic dose
+                  </Text>
+                </View>
+              </View>
+            ))}
+
+            <TouchableOpacity
+              style={styles.secondaryButton}
+              onPress={() =>
+                navigation.navigate("RemainingVolume", {
+                  dosingWeight,
+                  entries,
+                  totalPercentUsed, // 👈 pass total percent used
+                })
+              }
+            >
+              <Text style={styles.secondaryButtonText}>
+                Calculate Remaining Volume
+              </Text>
             </TouchableOpacity>
           </View>
-        ) : (
-          <Text style={styles.warning}>
-            Cumulative toxic dose ≥ 95%. No more LAs can be added.
-          </Text>
-        )}
-      </View>
-
-      <View style={styles.bottomSection}>
-        {entries.length > 0 && <Text style={styles.resultTitle}>Summary</Text>}
-
-        <FlatList
-          data={entries}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.listContainer}
-          renderItem={({ item }) => (
-            <View style={styles.entryRow}>
-              <View style={styles.entryDetails}>
-                <Text style={styles.entrytext}>
-                  {item.name} — {item.concentration} mg/ml (
-                  {(item.concentration / 10).toFixed(2)}%)
-                </Text>
-                <Text style={styles.entrytext}>Volume: {item.volume} ml</Text>
-                <Text style={styles.entrytext}>
-                  Dose: {item.dose} mg ({item.percent}%)
-                </Text>
-              </View>
-              <TouchableOpacity
-                onPress={() => deleteEntry(item.id)}
-                style={styles.iconButton}
-              >
-                <Ionicons name="close" size={20} color={Colors.accent} />
-              </TouchableOpacity>
-            </View>
-          )}
-        />
-
-        <TouchableOpacity
-          style={styles.secondaryButton}
-          onPress={() =>
-            navigation.navigate("RemainingVolume", {
-              dosingWeight,
-              entries,
-            })
-          }
-        >
-          <Text style={styles.secondaryButtonText}>
-            Calculate Remaining Volume
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+        </ScrollView>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -311,6 +360,54 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.white,
     padding: 20,
+  },
+  cardEntry: {
+    backgroundColor: "#fff",
+    padding: 12,
+    marginVertical: 8,
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    borderLeftWidth: 4,
+    borderLeftColor: "#2196F3", // blue stripe for visual branding
+  },
+  warningBadge: {
+    marginTop: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    alignSelf: "flex-start",
+  },
+  warningBadgeText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 13,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+
+  drugName: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+  },
+
+  cardContentRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginVertical: 2,
+  },
+
+  entryText: {
+    fontSize: 14,
+    color: "#555",
   },
   title: {
     fontSize: 20,
@@ -327,13 +424,13 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   pickerDisplay: {
-    width: "100%",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     borderWidth: 1,
     borderColor: "#ccc",
-    borderRadius: 5,
-    padding: 12,
-    backgroundColor: "#f0f0f0",
-    marginBottom: 6,
+    borderRadius: 12,
+    marginBottom: 12,
+    backgroundColor: "#f9f9f9",
   },
   pickerContainer: {
     width: "100%",
@@ -354,10 +451,12 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
     borderColor: "#ccc",
-    padding: 10,
-    backgroundColor: "#fff",
-    marginVertical: 10,
     borderRadius: 5,
+    padding: 12,
+    marginTop: 10,
+    fontSize: 16,
+    backgroundColor: "#f9f9f9",
+    marginBottom: 12,
   },
   addButton: {
     backgroundColor: Colors.pink,
@@ -379,11 +478,24 @@ const styles = StyleSheet.create({
   },
   progressBarContainer: {
     marginTop: 10,
-    marginBottom: 20,
+    marginBottom: 10,
   },
   progressBar: {
     height: 10,
     borderRadius: 5,
+  },
+  drugSummaryBadge: {
+    backgroundColor: "#E0F7FA",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    alignSelf: "flex-start",
+    marginTop: 8,
+  },
+  drugSummaryText: {
+    color: "#00796B",
+    fontSize: 13,
+    fontWeight: "600",
   },
   progressText: {
     fontSize: 12,
@@ -391,7 +503,23 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   form: {
-    marginTop: 10,
+    backgroundColor: "#fff",
+    padding: 16,
+    borderRadius: 16,
+    marginTop: 16,
+    marginBottom: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3, // Android
+  },
+  formHeading: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 12,
+    textAlign: "center",
+    color: "#333",
   },
   bottomSection: {
     flex: 1,
@@ -408,10 +536,12 @@ const styles = StyleSheet.create({
   entryRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    backgroundColor: "#f9f9f9",
+    backgroundColor: Colors.lightgreen,
     padding: 10,
     marginBottom: 8,
-    borderRadius: 5,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Colors.accent,
   },
   entryDetails: {
     flex: 1,
