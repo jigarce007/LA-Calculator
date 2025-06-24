@@ -21,7 +21,7 @@ import { Colors } from "../theme";
 import { PieChart } from "react-native-chart-kit";
 import { ProgressBar } from "react-native-paper";
 export function RemainingVolumeScreen({ route, navigation }) {
-  const { dosingWeight, entries, totalPercentUsed } = route.params;
+  const { dosingWeight, entries, totalPercentUsed = 0 } = route.params;
 
   const lastUsedLA =
     entries.length > 0 ? entries[entries.length - 1].name : LA_DRUGS[0].name;
@@ -332,19 +332,6 @@ export function RemainingVolumeScreen({ route, navigation }) {
                 </Text>
               </View>
               <Text style={styles.resultValue}>{remainingVolume} ml</Text>
-              <View style={[styles.riskBadge, { backgroundColor: riskColor }]}>
-                <Animated.View
-                  style={[
-                    styles.riskBadge,
-                    {
-                      backgroundColor: riskColor,
-                      transform: [{ scale: scaleAnim }],
-                    },
-                  ]}
-                >
-                  <Text style={styles.riskText}>{riskLevel} Risk</Text>
-                </Animated.View>
-              </View>
             </View>
           </View>
 

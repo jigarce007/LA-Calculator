@@ -59,7 +59,7 @@ export default function App() {
             <Stack.Screen
               name="InjectionPlan"
               component={InjectionPlanScreen}
-              options={{ headerShown: false }}
+              options={{ headerShown: true }}
             />
           </Stack.Navigator>
         </NavigationContainer>

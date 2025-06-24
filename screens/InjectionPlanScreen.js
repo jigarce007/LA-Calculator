@@ -1,5 +1,11 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  StatusBar,
+} from "react-native";
 import { Colors } from "../theme";
 
 export default function InjectionPlanScreen({ route, navigation }) {
@@ -7,6 +13,7 @@ export default function InjectionPlanScreen({ route, navigation }) {
 
   return (
     <View style={styles.container}>
+      <StatusBar backgroundColor={Colors.primary} barStyle="light-content" />
       <Text style={styles.question}>
         Do you plan to do more than one local anaesthetic injection?
       </Text>
@@ -36,6 +43,7 @@ export default function InjectionPlanScreen({ route, navigation }) {
             ibw,
             dosingWeight,
             entries: [], // Empty since no drugs yet
+            totalPercentUsed: 0,
           })
         }
       >

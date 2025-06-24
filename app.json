@@ -25,11 +25,15 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.rca.dosagecal"
+      "package": "com.rca.dosagecal",
+      "buildProperties": {
+        "enableProguardInReleaseBuilds": true
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "plugins": ["expo-build-properties"],
     "extra": {
       "eas": {
         "projectId": "099e8658-0f17-4f77-9c9e-383a1f300db2"
