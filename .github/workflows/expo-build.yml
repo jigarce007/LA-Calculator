@@ -1,0 +1,38 @@
+name: Expo EAS Build
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install Expo CLI & EAS
+        run: |
+          npm install -g expo-cli eas-cli
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Android AAB
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: eas build --platform android --non-interactive --profile preview
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: expo-builds
+          path: |
+            **/*.aab
