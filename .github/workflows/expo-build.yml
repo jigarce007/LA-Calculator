@@ -26,3 +26,4 @@ jobs:
 
       - name: Run EAS Build for Android
         run: eas build --platform android --non-interactive --profile preview
+ 
