@@ -2,7 +2,7 @@
   "expo": {
     "name": "LAST Calculator",
     "slug": "DosageCal",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/logoround.png",
     "userInterfaceStyle": "light",
@@ -25,15 +25,23 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.rca.dosagecal",
-      "buildProperties": {
-        "enableProguardInReleaseBuilds": true
-      }
+      "package": "com.rca.dosagecal"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": ["expo-build-properties"],
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true
+          }
+        }
+      ],
+      "expo-asset",
+      "expo-font"
+    ],
     "extra": {
       "eas": {
         "projectId": "099e8658-0f17-4f77-9c9e-383a1f300db2"
